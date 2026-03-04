@@ -10,6 +10,7 @@ import SavingsDashboard from './components/savings/SavingsDashboard';
 import { View } from './types';
 import HomeDashboard from './components/home/HomeDashboard';
 import SettingsDashboard from './components/settings/SettingsDashboard';
+import ChatDashboard from './components/chat/ChatDashboard';
 
 const AppContent: React.FC = () => {
   const { currentUser } = useAppContext();
@@ -33,6 +34,8 @@ const AppContent: React.FC = () => {
         return <SavingsDashboard setCurrentView={setCurrentView} />;
       case 'settings':
         return <SettingsDashboard setCurrentView={setCurrentView} />;
+      case 'chat':
+        return <ChatDashboard setCurrentView={setCurrentView} />;
       default:
         return <HomeDashboard setCurrentView={setCurrentView} />;
     }

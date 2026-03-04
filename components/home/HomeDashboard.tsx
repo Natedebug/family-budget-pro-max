@@ -8,7 +8,8 @@ import {
   CreditCardIcon, 
   BuildingLibraryIcon, 
   BanknotesIcon, 
-  CogIcon 
+  CogIcon,
+  ChatBubbleIcon
 } from '../ui/Icon';
 import UserSwitcher from '../layout/UserSwitcher';
 
@@ -27,6 +28,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ setCurrentView }) => {
     { name: 'challenges' as View, label: 'Challenges', description: 'Compete in family challenges and earn points.', icon: <ClockIcon />, roles: ['admin', 'member', 'kid'] },
     { name: 'recurring' as View, label: 'Subscriptions', description: 'Manage recurring payments.', icon: <CreditCardIcon />, roles: ['admin'] },
     { name: 'savings' as View, label: 'Savings', description: 'Watch your family savings grow.', icon: <BanknotesIcon />, roles: ['admin'] },
+    { name: 'chat' as View, label: 'AI Chat', description: 'Ask your AI assistant anything about your finances.', icon: <ChatBubbleIcon />, roles: ['admin', 'member'] },
   ];
 
   const visibleItems = navigationItems.filter(item => item.roles.includes(currentUser.role));

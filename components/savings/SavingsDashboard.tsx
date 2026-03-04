@@ -1,18 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
 import Card from '../ui/Card';
 import { SavingsTransaction, View } from '../../types';
 import UserSwitcher from '../layout/UserSwitcher';
+import Button from '../ui/Button';
+import { SparklesIcon } from '../ui/Icon';
+import { coachSavings } from '../../services/agents/savingsCoachAgent';
 
 interface SavingsDashboardProps {
   setCurrentView: (view: View) => void;
 }
 
 const SavingsDashboard: React.FC<SavingsDashboardProps> = ({ setCurrentView }) => {
-  const { savingsBalance, savingsHistory } = useAppContext();
+  const { savingsBalance, savingsHistory, income, budgetCategories } = useAppContext();
+  const [coaching, setCoaching] = useState<string | null>(null);
+  const [isCoaching, setIsCoaching] = useState(false);
 
   const formattedAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  };
+
+  const handleGetCoaching = async () => {
+    setIsCoaching(true);
+    setCoaching(null);
+    try {
+      const result = await coachSavings({ savingsBalance, income, categories: budgetCategories });
+      setCoaching(result);
+    } catch (err) {
+      console.error('Savings coaching error:', err);
+      setCoaching('Unable to generate coaching at this time. Please try again.');
+    } finally {
+      setIsCoaching(false);
+    }
   };
 
   return (
@@ -33,6 +52,30 @@ const SavingsDashboard: React.FC<SavingsDashboardProps> = ({ setCurrentView }) =
           {formattedAmount(savingsBalance)}
         </p>
       </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleGetCoaching} disabled={isCoaching} variant="secondary">
+          <SparklesIcon className="w-5 h-5" />
+          {isCoaching ? 'Analyzing...' : 'Get AI Coaching'}
+        </Button>
+      </div>
+
+      {(coaching || isCoaching) && (
+        <Card className="bg-slate-800/60 border border-slate-700">
+          <div className="flex items-center mb-3">
+            <SparklesIcon className="w-5 h-5 text-purple-400 mr-2" />
+            <h3 className="text-lg font-semibold text-white">Savings Coach</h3>
+          </div>
+          {isCoaching ? (
+            <div className="flex flex-col items-center py-4">
+              <div className="w-8 h-8 border-4 border-t-purple-500 border-slate-600 rounded-full animate-spin mb-3" />
+              <p className="text-slate-400">Analyzing your savings...</p>
+            </div>
+          ) : (
+            <p className="text-slate-300 text-sm whitespace-pre-wrap">{coaching}</p>
+          )}
+        </Card>
+      )}
 
       <div>
         <h2 className="text-xl font-semibold mb-3">Savings History</h2>

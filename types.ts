@@ -138,6 +138,17 @@ export interface AppContextType {
   markAsPaid: (id: string, type: 'bill' | 'subscription') => void;
   updateIncome: (newIncome: number) => void;
   endMonthRollover: (surplusOption: SurplusOption) => void;
+  chatMessages: ChatMessage[];
+  addChatMessage: (message: ChatMessage) => void;
+  addGeneratedChallenges: (challenges: Challenge[]) => void;
 }
 
-export type View = 'home' | 'budget' | 'challenges' | 'transactions' | 'recurring' | 'bills' | 'savings' | 'settings';
+export type View = 'home' | 'budget' | 'challenges' | 'transactions' | 'recurring' | 'bills' | 'savings' | 'chat' | 'settings';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  memberId: string;
+}

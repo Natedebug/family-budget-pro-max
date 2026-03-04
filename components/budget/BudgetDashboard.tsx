@@ -11,7 +11,7 @@ import CategoryGroupCard from './CategoryGroupCard';
 import UserSwitcher from '../layout/UserSwitcher';
 import EndMonthRolloverModal from './EndMonthRolloverModal';
 import AddExpenseFlow from './AddExpenseFlow';
-import OpenAI from 'openai';
+import { analyzeBudget } from '../../services/agents/budgetAnalystAgent';
 import GeminiSummary from './GeminiSummary';
 
 interface BudgetDashboardProps {
@@ -38,46 +38,16 @@ const BudgetDashboard: React.FC<BudgetDashboardProps> = ({ setCurrentView }) => 
 
     const visibleCategories = budgetCategories.filter(c => !c.ownerId || c.ownerId === currentUser.id);
 
-    const budgetDetails = visibleCategories
-        .map(cat => `- ${cat.name}: Spent ${formattedAmount(cat.spent)} of ${formattedAmount(cat.allocated)}`)
-        .join('\n');
-    
-    const recentTransactions = transactions
-        .filter(t => visibleCategories.some(c => c.id === t.categoryId))
-        .slice(0, 5)
-        .map(tx => `- ${tx.merchant}: ${formattedAmount(tx.amount)}`)
-        .join('\n');
-
-    const prompt = `
-      You are a friendly and insightful financial assistant for a family. 
-      Based on the following monthly budget data, provide a concise summary of our financial health.
-
-      Your summary should:
-      1. Start with a positive and encouraging opening for the user, ${currentUser.name}.
-      2. Highlight 1-2 categories where spending is well under control.
-      3. Gently point out 1-2 categories that are over budget or close to the limit.
-      4. Offer one simple, actionable tip for improvement based on the data.
-      5. Keep the entire summary to about 3-4 short paragraphs.
-      6. Format the output using markdown for readability (e.g., use bold for category names, bullet points for lists).
-
-      Here is the data:
-      - Monthly Income: ${formattedAmount(income)}
-      - User: ${currentUser.name}
-
-      Budget Categories Status:
-      ${budgetDetails}
-
-      Recent Transactions (for context):
-      ${recentTransactions}
-    `;
-
     try {
-        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY as string, dangerouslyAllowBrowser: true });
-        const response = await client.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [{ role: 'user', content: prompt }],
+        const result = await analyzeBudget({
+            member: currentUser,
+            income,
+            categories: visibleCategories,
+            recentTransactions: transactions.filter(t =>
+                visibleCategories.some(c => c.id === t.categoryId)
+            ),
         });
-        setSummary(response.choices[0].message.content ?? null);
+        setSummary(result);
     } catch (error) {
         console.error("Error generating budget summary:", error);
         setSummary("Sorry, I couldn't generate a summary at this time. Please try again later.");

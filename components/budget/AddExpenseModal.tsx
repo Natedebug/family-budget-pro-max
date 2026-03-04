@@ -3,7 +3,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { useAppContext } from '../../hooks/useAppContext';
 import { PlusIcon, CameraIcon } from '../ui/Icon';
-import OpenAI from 'openai';
+import { processReceiptCapture } from '../../services/workflows/expenseCaptureWorkflow';
 import { Frequency } from '../../types';
 
 interface AddExpenseModalProps {
@@ -75,25 +75,10 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
     try {
         const reader = new FileReader();
         reader.onloadend = async () => {
-            setReceiptImage(reader.result as string);
-
-            const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY as string, dangerouslyAllowBrowser: true });
-            const prompt = "Analyze this receipt image and extract the merchant name and the total amount. Return the data in a clean JSON format like this: {\"merchant\": \"Merchant Name\", \"total\": 123.45}. If you cannot find a value, return null for that key.";
             const dataUrl = reader.result as string;
+            setReceiptImage(dataUrl);
 
-            const response = await client.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [{
-                    role: 'user',
-                    content: [
-                        { type: 'image_url', image_url: { url: dataUrl } },
-                        { type: 'text', text: prompt },
-                    ],
-                }],
-            });
-
-            const jsonString = (response.choices[0].message.content ?? '{}').replace(/```json|```/g, '').trim();
-            const result = JSON.parse(jsonString);
+            const result = await processReceiptCapture(dataUrl);
 
             if (result.merchant) {
                 setMerchant(result.merchant);

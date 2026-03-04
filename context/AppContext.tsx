@@ -1,5 +1,5 @@
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { FamilyMember, BudgetCategory, Transaction, Challenge, Badge, NewTransaction, ColorPalette, RecurringExpense, Bill, AppContextType, CategoryGroup, SavingsTransaction, SurplusOption } from '../types';
+import { FamilyMember, BudgetCategory, Transaction, Challenge, Badge, NewTransaction, ColorPalette, RecurringExpense, Bill, AppContextType, CategoryGroup, SavingsTransaction, SurplusOption, ChatMessage } from '../types';
 import { FAMILY_MEMBERS, BUDGET_CATEGORIES, TRANSACTIONS, CHALLENGES, BADGES, RECURRING_EXPENSES, BILLS, CATEGORY_GROUPS, INITIAL_INCOME, INITIAL_SAVINGS_BALANCE, INITIAL_SAVINGS_HISTORY } from '../constants';
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -16,6 +16,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [income, setIncome] = useState<number>(INITIAL_INCOME);
   const [savingsBalance, setSavingsBalance] = useState<number>(INITIAL_SAVINGS_BALANCE);
   const [savingsHistory, setSavingsHistory] = useState<SavingsTransaction[]>(INITIAL_SAVINGS_HISTORY);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
 
   useEffect(() => {
@@ -228,6 +229,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setIncome(newIncome);
   };
 
+  const addChatMessage = (message: ChatMessage) => {
+    setChatMessages(prev => [...prev, message]);
+  };
+
+  const addGeneratedChallenges = (newChallenges: Challenge[]) => {
+    setChallenges(prev => [...newChallenges, ...prev]);
+  };
+
   const endMonthRollover = (surplusOption: SurplusOption) => {
     const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
     const surplus = income - totalSpent;
@@ -315,6 +324,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     markAsPaid,
     updateIncome,
     endMonthRollover,
+    chatMessages,
+    addChatMessage,
+    addGeneratedChallenges,
   };
 
   return (

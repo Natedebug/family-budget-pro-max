@@ -1,19 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../hooks/useAppContext';
 import Leaderboard from './Leaderboard';
 import ChallengeCard from './ChallengeCard';
 import BadgesDisplay from './BadgesDisplay';
 import { ChallengeType, View } from '../../types';
 import UserSwitcher from '../layout/UserSwitcher';
+import { SparklesIcon } from '../ui/Icon';
+import Button from '../ui/Button';
+import { refreshChallenges } from '../../services/workflows/challengeRefreshWorkflow';
 
 interface ChallengesDashboardProps {
   setCurrentView: (view: View) => void;
 }
 
 const ChallengesDashboard: React.FC<ChallengesDashboardProps> = ({ setCurrentView }) => {
-  const { challenges, familyMembers } = useAppContext();
-  // For demo, we'll assume a "current user" to complete challenges
-  const currentUser = familyMembers[1]; // Mom
+  const { challenges, familyMembers, budgetCategories, addGeneratedChallenges, currentUser } = useAppContext();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const handleGenerateChallenges = async () => {
+    setIsGenerating(true);
+    setGenError(null);
+    try {
+      const newChallenges = await refreshChallenges(budgetCategories, familyMembers, challenges);
+      if (newChallenges.length > 0) {
+        addGeneratedChallenges(newChallenges);
+      } else {
+        setGenError('No new challenges generated. Try again!');
+      }
+    } catch (err) {
+      console.error('Challenge generation error:', err);
+      setGenError('Failed to generate challenges. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const dailyChallenge = challenges.find(c => c.type === ChallengeType.DAILY);
   const weeklyChallenge = challenges.find(c => c.type === ChallengeType.WEEKLY);
@@ -28,8 +49,17 @@ const ChallengesDashboard: React.FC<ChallengesDashboardProps> = ({ setCurrentVie
             </button>
             <h1 className="text-3xl font-bold text-white">Challenges 🎯</h1>
         </div>
-        <UserSwitcher />
+        <div className="flex items-center gap-2">
+          <Button onClick={handleGenerateChallenges} disabled={isGenerating} variant="secondary">
+            <SparklesIcon className="w-5 h-5" />
+            {isGenerating ? 'Generating...' : 'AI Challenges'}
+          </Button>
+          <UserSwitcher />
+        </div>
       </header>
+      {genError && (
+        <p className="text-red-400 text-sm px-1">{genError}</p>
+      )}
 
       <Leaderboard />
 
