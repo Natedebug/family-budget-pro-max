@@ -11,7 +11,7 @@ import CategoryGroupCard from './CategoryGroupCard';
 import UserSwitcher from '../layout/UserSwitcher';
 import EndMonthRolloverModal from './EndMonthRolloverModal';
 import AddExpenseFlow from './AddExpenseFlow';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import GeminiSummary from './GeminiSummary';
 
 interface BudgetDashboardProps {
@@ -72,12 +72,12 @@ const BudgetDashboard: React.FC<BudgetDashboardProps> = ({ setCurrentView }) => 
     `;
 
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+        const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY as string, dangerouslyAllowBrowser: true });
+        const response = await client.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
         });
-        setSummary(response.text);
+        setSummary(response.choices[0].message.content ?? null);
     } catch (error) {
         console.error("Error generating budget summary:", error);
         setSummary("Sorry, I couldn't generate a summary at this time. Please try again later.");

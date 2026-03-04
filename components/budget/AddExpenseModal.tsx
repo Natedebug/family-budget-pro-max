@@ -3,7 +3,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { useAppContext } from '../../hooks/useAppContext';
 import { PlusIcon, CameraIcon } from '../ui/Icon';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { Frequency } from '../../types';
 
 interface AddExpenseModalProps {
@@ -75,31 +75,24 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onAd
     try {
         const reader = new FileReader();
         reader.onloadend = async () => {
-            const base64Data = (reader.result as string).split(',')[1];
             setReceiptImage(reader.result as string);
 
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-            const model = 'gemini-2.5-flash';
-            
+            const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY as string, dangerouslyAllowBrowser: true });
             const prompt = "Analyze this receipt image and extract the merchant name and the total amount. Return the data in a clean JSON format like this: {\"merchant\": \"Merchant Name\", \"total\": 123.45}. If you cannot find a value, return null for that key.";
+            const dataUrl = reader.result as string;
 
-            const imagePart = {
-                inlineData: {
-                  mimeType: file.type,
-                  data: base64Data
-                },
-            };
-            
-            const textPart = {
-                text: prompt,
-            };
-
-            const response = await ai.models.generateContent({
-                model,
-                contents: { parts: [imagePart, textPart] },
+            const response = await client.chat.completions.create({
+                model: 'gpt-4o',
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'image_url', image_url: { url: dataUrl } },
+                        { type: 'text', text: prompt },
+                    ],
+                }],
             });
-            
-            const jsonString = response.text.replace(/```json|```/g, '').trim();
+
+            const jsonString = (response.choices[0].message.content ?? '{}').replace(/```json|```/g, '').trim();
             const result = JSON.parse(jsonString);
 
             if (result.merchant) {
